@@ -1,0 +1,4 @@
+course_id,title,description,category,instructor,duration,price,rating,level
+CS101,Introduction to Programming,Learn basic programming concepts,Programming,John Doe,40 hours,99,4.5,Beginner
+CS102,Advanced Programming,Master advanced programming techniques,Programming,Jane Smith,60 hours,149,4.8,Advanced
+WEB101,Web Development Basics,Learn HTML CSS and JavaScript,Web Development,Bob Johnson,50 hours,129,4.3,Intermediate

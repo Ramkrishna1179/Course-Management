@@ -1,0 +1,20 @@
+{
+  "name": "course-management-backend",
+  "version": "1.0.0",
+  "description": "MERN Stack Backend with Microservices Architecture",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run auth:dev\" \"npm run course:dev\" \"npm run ai:dev\"",
+    "auth:dev": "cd services/auth && npm run dev",
+    "course:dev": "cd services/course-management && npm run dev",
+    "ai:dev": "cd services/ai-recommendation && npm run dev",
+    "install:all": "npm install && cd services/auth && npm install && cd ../course-management && npm install && cd ../ai-recommendation && npm install"
+  },
+  "keywords": ["mern", "microservices", "nodejs", "express", "mongodb", "redis"],
+  "author": "Developer",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
+  }
+}
