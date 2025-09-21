@@ -1,5 +1,6 @@
 import type { Course } from '@/lib/types';
 
+// Sample course data for demonstration
 export const courses: Course[] = [
   {
     uniqueId: 'CS101',

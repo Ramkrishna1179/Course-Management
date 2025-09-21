@@ -1,16 +1,18 @@
 const redis = require('redis');
 
+// Redis service for caching operations
 class RedisService {
   constructor() {
     this.client = null;
     this.isConnected = false;
   }
 
+  // Connect to Redis server
   async connect() {
     try {
       this.client = redis.createClient({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379,
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT ,
         password: process.env.REDIS_PASSWORD || undefined,
         retry_strategy: (options) => {
           if (options.error && options.error.code === 'ECONNREFUSED') {
@@ -58,6 +60,7 @@ class RedisService {
     }
   }
 
+  // Get value from Redis cache
   async get(key) {
     try {
       if (!this.isConnected || !this.client) {
@@ -71,6 +74,7 @@ class RedisService {
     }
   }
 
+  // Set value in Redis cache with optional expiry
   async set(key, value, expireInSeconds = null) {
     try {
       if (!this.isConnected || !this.client) {
@@ -115,6 +119,7 @@ class RedisService {
     }
   }
 
+  // Generate cache key from parameters
   generateCacheKey(prefix, params) {
     const sortedParams = Object.keys(params)
       .sort()
@@ -123,6 +128,7 @@ class RedisService {
     return `${prefix}:${sortedParams}`;
   }
 
+  // Disconnect from Redis server
   async disconnect() {
     try {
       if (this.client) {
@@ -135,4 +141,5 @@ class RedisService {
   }
 }
 
+// Export Redis service instance
 module.exports = new RedisService();

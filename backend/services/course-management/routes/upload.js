@@ -7,6 +7,7 @@ const { clearCache } = require('../middleware/cache');
 
 const router = express.Router();
 
+// Configure multer for CSV file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -21,6 +22,7 @@ const upload = multer({
   }
 });
 
+// CSV file upload endpoint
 router.post('/csv', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -30,17 +32,18 @@ router.post('/csv', upload.single('file'), async (req, res) => {
       });
     }
 
+    // Parse CSV data
     const csvData = req.file.buffer.toString('utf8');
     const courses = await csv().fromString(csvData);
 
-    // Filter out empty rows (rows where all values are empty or just whitespace)
+    // Filter out empty rows
     const filteredCourses = courses.filter(course => {
       return Object.values(course).some(value => 
         value && value.toString().trim() !== ''
       );
     });
 
-    console.log('Filtered courses count:', filteredCourses.length);
+    // Process filtered courses
 
     if (filteredCourses.length === 0) {
       return res.status(400).json({
@@ -49,6 +52,7 @@ router.post('/csv', upload.single('file'), async (req, res) => {
       });
     }
 
+    // Validate course data
     const validationResults = validateCoursesData(filteredCourses);
     if (validationResults.errors.length > 0) {
       return res.status(400).json({

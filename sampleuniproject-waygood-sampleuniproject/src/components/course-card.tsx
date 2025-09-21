@@ -9,6 +9,7 @@ interface CourseCardProps {
   course: Course;
 }
 
+// Course card component for displaying course information
 export default function CourseCard({ course }: CourseCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
@@ -31,6 +32,7 @@ export default function CourseCard({ course }: CourseCardProps) {
           <Badge variant="secondary">{course.durationMonths} months</Badge>
           <Badge variant="secondary">{course.languageOfInstruction}</Badge>
         </div>
+        {/* Course details */}
         <div className="space-y-2 text-sm">
            <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-accent" />
@@ -44,6 +46,7 @@ export default function CourseCard({ course }: CourseCardProps) {
           </div>
         </div>
       </CardContent>
+      {/* Course action footer */}
       <CardFooter className="bg-muted/50 p-4">
         <Button asChild className="w-full" variant="outline">
           <Link href={course.courseUrl}>

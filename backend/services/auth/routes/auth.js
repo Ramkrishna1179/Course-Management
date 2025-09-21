@@ -5,13 +5,13 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// generate jwt token for user
-const generateToken = (user) => {
+// Helper function to create JWT tokens
+const createToken = (user) => {
   return jwt.sign(
     { 
-      id: user._id,
-      Email: user.email,
-      userName: user.username,
+      userId: user._id,
+      email: user.email,
+      username: user.username,
       role: user.role
     }, 
     process.env.JWT_SECRET, 
@@ -19,6 +19,7 @@ const generateToken = (user) => {
   );
 };
 
+// Admin signup endpoint
 router.post('/signup', [
   body('username')
     .isLength({ min: 3, max: 30 })
@@ -47,6 +48,7 @@ router.post('/signup', [
 
     const { username, email, password } = req.body;
 
+    // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { username }]
     });
@@ -58,16 +60,17 @@ router.post('/signup', [
       });
     }
 
+    // Create new admin user
     const user = new User({
       username,
       email,
       password,
-      role: 'user'
+      role: 'admin'
     });
 
     await user.save();
 
-    const token = generateToken(user);
+    const token = createToken(user);
 
     res.status(201).json({
       success: true,
@@ -87,6 +90,7 @@ router.post('/signup', [
   }
 });
 
+// Admin login endpoint
 router.post('/login', [
   body('email')
     .isEmail()
@@ -108,6 +112,7 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
@@ -134,7 +139,7 @@ router.post('/login', [
     // Allow both admin and regular users to login
     // Role-based access control will be handled on the frontend
 
-    const token = generateToken(user);
+    const token = createToken(user);
 
     res.json({
       success: true,

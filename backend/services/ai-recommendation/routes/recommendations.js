@@ -4,6 +4,7 @@ const geminiService = require('../services/geminiService');
 
 const router = express.Router();
 
+// AI course recommendations endpoint
 router.post('/recommendations', [
   body('topics')
     .isArray({ min: 1 })
@@ -31,6 +32,7 @@ router.post('/recommendations', [
     .withMessage('Each interest must be a string')
 ], async (req, res) => {
   try {
+    // Validate request body
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -40,6 +42,7 @@ router.post('/recommendations', [
       });
     }
 
+    // Extract user preferences
     const { topics, skillLevel, duration = '10-20 hours', interests = [] } = req.body;
 
     const userPreferences = {
@@ -49,6 +52,7 @@ router.post('/recommendations', [
       interests
     };
 
+    // Generate AI recommendations
     const recommendations = await geminiService.generateRecommendations(userPreferences);
 
     res.json({
@@ -73,6 +77,7 @@ router.post('/recommendations', [
   }
 });
 
+// Sample recommendations endpoint for testing
 router.get('/recommendations/sample', async (req, res) => {
   try {
     const samplePreferences = {
@@ -105,4 +110,5 @@ router.get('/recommendations/sample', async (req, res) => {
   }
 });
 
+// Export recommendations router
 module.exports = router;

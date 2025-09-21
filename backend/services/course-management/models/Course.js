@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// course schema definition
+// Course schema for MongoDB
 const courseSchema = new mongoose.Schema({
   course_id: {
     type: String,
@@ -87,11 +87,13 @@ const courseSchema = new mongoose.Schema({
 courseSchema.index({ title: 'text', description: 'text', category: 'text', instructor: 'text' });
 courseSchema.index({ course_id: 1 });
 courseSchema.index({ category: 1 });
+// Database indexes for better query performance
 courseSchema.index({ instructor: 1 });
 courseSchema.index({ level: 1 });
 courseSchema.index({ price: 1 });
 courseSchema.index({ rating: -1 });
 
+// Update timestamp before saving
 courseSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();

@@ -1,4 +1,4 @@
-// api service for backend calls
+// API service for handling all backend calls
 import { getUserFromToken } from './jwt';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002';
@@ -9,11 +9,13 @@ class ApiService {
   private authToken: string | null = null;
 
   constructor() {
+    // Initialize auth token from localStorage if available
     if (typeof window !== 'undefined') {
       this.authToken = localStorage.getItem('authToken');
     }
   }
 
+  // Set authentication token
   setAuthToken(token: string) {
     this.authToken = token;
     if (typeof window !== 'undefined') {
@@ -21,6 +23,7 @@ class ApiService {
     }
   }
 
+  // Clear authentication token
   clearAuthToken() {
     this.authToken = null;
     if (typeof window !== 'undefined') {
@@ -128,6 +131,7 @@ class ApiService {
       ? `${API_BASE_URL}/api/courses?${queryString}`
       : `${API_BASE_URL}/api/courses`;
     
+    
     return await this.apiCall(url);
   }
 
@@ -154,6 +158,7 @@ class ApiService {
     const url = queryString 
       ? `${API_BASE_URL}/api/search/courses?${queryString}`
       : `${API_BASE_URL}/api/search/courses`;
+    
     
     return await this.apiCall(url);
   }
@@ -211,6 +216,13 @@ class ApiService {
   // Statistics API calls
   async getCourseStats() {
     return await this.apiCall(`${API_BASE_URL}/api/courses/stats/overview`);
+  }
+
+  // Update student enrollments
+  async updateEnrollments() {
+    return await this.apiCall(`${API_BASE_URL}/api/courses/update-enrollments`, {
+      method: 'POST'
+    });
   }
 
   // AI Recommendation API calls

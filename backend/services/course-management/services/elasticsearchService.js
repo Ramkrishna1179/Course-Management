@@ -1,5 +1,6 @@
 const { Client } = require('elasticsearch');
 
+// Elasticsearch service for search operations
 class ElasticsearchService {
   constructor() {
     this.client = null;
@@ -7,6 +8,7 @@ class ElasticsearchService {
     this.indexName = 'courses';
   }
 
+  // Connect to Elasticsearch server
   async connect() {
     try {
       this.client = new Client({
@@ -27,6 +29,7 @@ class ElasticsearchService {
     }
   }
 
+  // Create Elasticsearch index if it doesn't exist
   async createIndexIfNotExists() {
     try {
       const exists = await this.client.indices.exists({ index: this.indexName });
@@ -82,6 +85,7 @@ class ElasticsearchService {
     }
   }
 
+  // Index a course document in Elasticsearch
   async indexCourse(course) {
     try {
       if (!this.isConnected || !this.client) {
@@ -117,12 +121,14 @@ class ElasticsearchService {
     }
   }
 
+  // Search courses using Elasticsearch
   async searchCourses(query, filters = {}) {
     try {
       if (!this.isConnected || !this.client) {
         return { hits: [], total: 0 };
       }
 
+      // Build Elasticsearch query
       const searchBody = {
         query: {
           bool: {
@@ -135,6 +141,7 @@ class ElasticsearchService {
         size: filters.size || 10
       };
 
+      // Add text search query
       if (query && query.trim()) {
         searchBody.query.bool.must.push({
           multi_match: {
@@ -275,4 +282,5 @@ class ElasticsearchService {
   }
 }
 
+// Export Elasticsearch service instance
 module.exports = new ElasticsearchService();

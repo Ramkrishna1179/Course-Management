@@ -1,4 +1,4 @@
-// JWT utility functions
+// JWT utility functions for token handling
 export function decodeJWT(token: string) {
   try {
     // JWT tokens have 3 parts separated by dots: header.payload.signature
@@ -18,10 +18,10 @@ export function decodeJWT(token: string) {
     
     // Parse JSON
     return JSON.parse(decodedPayload);
-  } catch (error) {
-    console.error('Error decoding JWT:', error);
-    return null;
-  }
+    } catch (error) {
+      // Handle JWT decoding error silently
+      return null;
+    }
 }
 
 export function getRoleFromToken(token: string): string | null {
@@ -29,6 +29,7 @@ export function getRoleFromToken(token: string): string | null {
   return decoded?.role || null;
 }
 
+// Extract user information from JWT token
 export function getUserFromToken(token: string) {
   const decoded = decodeJWT(token);
   return decoded ? {

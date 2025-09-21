@@ -1,6 +1,6 @@
 "use client"
 
-// Inspired by react-hot-toast library
+// Toast notification hook inspired by react-hot-toast
 import * as React from "react"
 
 import type {
@@ -8,6 +8,7 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
+// Toast configuration
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000
 
@@ -18,6 +19,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+// Toast action types
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
@@ -27,6 +29,7 @@ const actionTypes = {
 
 let count = 0
 
+// Generate unique ID for toasts
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -56,8 +59,10 @@ interface State {
   toasts: ToasterToast[]
 }
 
+// Track toast removal timeouts
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+// Add toast to removal queue
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -74,6 +79,7 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Toast state reducer
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
@@ -93,8 +99,7 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Add to removal queue for auto-dismiss
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -178,6 +183,7 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// Main toast hook
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
@@ -198,4 +204,5 @@ function useToast() {
   }
 }
 
+// Export toast hook and function
 export { useToast, toast }

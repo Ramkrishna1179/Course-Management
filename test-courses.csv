@@ -1,4 +1,57 @@
-course_id,title,description,category,instructor,duration,price,rating,level
-CS101,Introduction to Programming,Learn basic programming concepts,Programming,John Doe,40 hours,99,4.5,Beginner
-CS102,Advanced Programming,Master advanced programming techniques,Programming,Jane Smith,60 hours,149,4.8,Advanced
-WEB101,Web Development Basics,Learn HTML CSS and JavaScript,Web Development,Bob Johnson,50 hours,129,4.3,Intermediate
+course_id,title,description,category,instructor,duration,price,rating,level,studentsEnrolled
+CS101,Introduction to Programming,Learn basic programming concepts with Python and JavaScript,Programming,John Doe,40 hours,99,4.5,Beginner,1250
+CS102,Advanced Programming,Master advanced programming techniques and design patterns,Programming,Jane Smith,60 hours,149,4.8,Advanced,890
+CS103,Data Structures and Algorithms,Comprehensive study of fundamental data structures and algorithms,Programming,Dr. Alex Chen,50 hours,129,4.6,Intermediate,2100
+CS104,Software Engineering Principles,Learn software development lifecycle and best practices,Programming,Prof. Maria Garcia,45 hours,119,4.4,Intermediate,1750
+WEB101,Web Development Basics,Learn HTML CSS and JavaScript for modern web development,Web Development,Bob Johnson,50 hours,89,4.3,Intermediate,3200
+WEB102,React.js Masterclass,Build dynamic web applications with React and modern JavaScript,Web Development,Sarah Wilson,70 hours,179,4.7,Advanced,1850
+WEB103,Full Stack Development,Complete web development with Node.js Express and MongoDB,Web Development,Mike Chen,80 hours,199,4.5,Advanced,2100
+WEB104,Frontend Frameworks,Master Vue.js Angular and modern frontend technologies,Web Development,Emily Davis,60 hours,159,4.2,Intermediate,1450
+DATA101,Machine Learning Fundamentals,Comprehensive introduction to ML algorithms and data science,Data Science,Dr. Sarah Wilson,80 hours,199,4.7,Intermediate,2800
+DATA102,Deep Learning with TensorFlow,Advanced neural networks and deep learning techniques,Data Science,Dr. Michael Brown,90 hours,249,4.8,Advanced,1650
+DATA103,Data Analysis with Python,Statistical analysis and data visualization using Python,Data Science,Dr. Lisa Zhang,55 hours,149,4.4,Intermediate,2200
+DATA104,Big Data Analytics,Processing and analyzing large datasets with Hadoop and Spark,Data Science,Dr. Robert Kim,75 hours,219,4.6,Advanced,1350
+MOB101,React Native Mobile Development,Build cross-platform mobile apps with React Native,Mobile Development,Mike Chen,70 hours,179,4.6,Advanced,1950
+MOB102,iOS App Development,Create native iOS applications using Swift and Xcode,Mobile Development,Anna Thompson,65 hours,199,4.5,Intermediate,1600
+MOB103,Android Development,Build Android apps using Kotlin and Android Studio,Mobile Development,David Lee,60 hours,169,4.3,Intermediate,1800
+MOB104,Flutter Development,Cross-platform mobile development with Flutter and Dart,Mobile Development,Jessica Park,55 hours,159,4.4,Intermediate,1400
+BUS101,Digital Marketing Strategy,Comprehensive digital marketing and social media strategy,Business,Mark Johnson,40 hours,99,4.2,Intermediate,2500
+BUS102,Project Management,Agile and traditional project management methodologies,Business,Lisa Anderson,45 hours,119,4.3,Intermediate,2100
+BUS103,Financial Analysis,Corporate finance and investment analysis techniques,Business,Dr. James Wilson,50 hours,139,4.5,Advanced,1200
+BUS104,Entrepreneurship,Starting and scaling successful business ventures,Business,Prof. Sarah Davis,35 hours,89,4.1,Intermediate,1800
+DES101,UI/UX Design Fundamentals,User interface and user experience design principles,Design,Emma Wilson,40 hours,109,4.4,Intermediate,1650
+DES102,Graphic Design Mastery,Adobe Creative Suite and professional graphic design,Design,Tom Rodriguez,45 hours,129,4.3,Intermediate,1400
+DES103,Web Design,Modern web design principles and responsive layouts,Design,Sophie Chen,35 hours,99,4.2,Intermediate,1900
+DES104,Digital Illustration,Digital art and illustration techniques,Design,Alex Martinez,30 hours,79,4.0,Intermediate,1100
+SEC101,Cybersecurity Fundamentals,Introduction to cybersecurity threats and protection,Cybersecurity,Dr. Kevin Smith,50 hours,149,4.6,Intermediate,1750
+SEC102,Ethical Hacking,Penetration testing and security assessment techniques,Cybersecurity,Prof. Rachel Green,60 hours,179,4.7,Advanced,1200
+SEC103,Network Security,Protecting network infrastructure and data transmission,Cybersecurity,Dr. Paul White,45 hours,139,4.4,Intermediate,1550
+SEC104,Cloud Security,Securing cloud environments and data storage,Cybersecurity,Dr. Maria Lopez,40 hours,129,4.3,Intermediate,1300
+AI101,Artificial Intelligence Basics,Introduction to AI concepts and machine learning,Artificial Intelligence,Dr. Alan Turing,55 hours,159,4.5,Intermediate,2200
+AI102,Natural Language Processing,Text analysis and language understanding with AI,Artificial Intelligence,Dr. Grace Hopper,65 hours,189,4.6,Advanced,1500
+AI103,Computer Vision,Image recognition and computer vision applications,Artificial Intelligence,Dr. Yann LeCun,70 hours,199,4.7,Advanced,1350
+AI104,Robotics and Automation,Building intelligent robots and automated systems,Artificial Intelligence,Dr. Rodney Brooks,80 hours,229,4.8,Advanced,1100
+CLOUD101,AWS Cloud Practitioner,Amazon Web Services fundamentals and cloud computing,Cloud Computing,John AWS,40 hours,119,4.3,Intermediate,2800
+CLOUD102,Azure Fundamentals,Microsoft Azure cloud platform and services,Cloud Computing,Sarah Azure,45 hours,129,4.2,Intermediate,2100
+CLOUD103,Google Cloud Platform,Google Cloud services and machine learning APIs,Cloud Computing,Mike GCP,50 hours,139,4.4,Intermediate,1950
+CLOUD104,DevOps with Docker,Containerization and continuous integration practices,Cloud Computing,David Docker,55 hours,149,4.5,Advanced,1700
+BLOCK101,Blockchain Fundamentals,Understanding blockchain technology and cryptocurrencies,Blockchain,Dr. Satoshi Nakamoto,45 hours,139,4.4,Intermediate,1600
+BLOCK102,Smart Contracts,Developing smart contracts with Solidity and Ethereum,Blockchain,Prof. Vitalik Buterin,60 hours,179,4.6,Advanced,1200
+BLOCK103,DeFi Development,Decentralized finance applications and protocols,Blockchain,Dr. Andre Cronje,70 hours,199,4.7,Advanced,950
+BLOCK104,NFT Development,Creating and managing non-fungible tokens,Blockchain,Prof. Beeple,35 hours,99,4.1,Intermediate,1300
+GAME101,Game Development with Unity,Creating 2D and 3D games using Unity engine,Game Development,John GameDev,65 hours,179,4.5,Intermediate,1850
+GAME102,Unreal Engine Mastery,Advanced game development with Unreal Engine,Game Development,Sarah Unreal,75 hours,199,4.6,Advanced,1400
+GAME103,Game Design Principles,Game mechanics and player experience design,Game Development,Mike Designer,40 hours,109,4.2,Intermediate,1650
+GAME104,Mobile Game Development,Creating games for iOS and Android platforms,Game Development,Lisa Mobile,50 hours,139,4.3,Intermediate,1500
+LANG101,Spanish for Beginners,Learn Spanish language from basic to intermediate level,Language,Prof. Maria Rodriguez,30 hours,79,4.0,Beginner,3200
+LANG102,French Language Course,Comprehensive French language learning program,Language,Prof. Pierre Dubois,35 hours,89,4.1,Intermediate,2500
+LANG103,German Intensive Course,Intensive German language and culture program,Language,Prof. Hans Mueller,40 hours,99,4.2,Intermediate,1800
+LANG104,Japanese Language,Learn Japanese writing and speaking skills,Language,Prof. Yuki Tanaka,45 hours,119,4.3,Intermediate,1600
+HEALTH101,Digital Health Technologies,Healthcare technology and telemedicine solutions,Healthcare,Dr. Sarah Health,50 hours,149,4.4,Intermediate,1200
+HEALTH102,Medical Data Analysis,Healthcare data analytics and patient care optimization,Healthcare,Dr. John Medical,55 hours,159,4.5,Advanced,950
+HEALTH103,Health Informatics,Information systems in healthcare and medical records,Healthcare,Dr. Lisa Informatics,45 hours,129,4.3,Intermediate,1100
+HEALTH104,Public Health Policy,Healthcare policy and community health management,Healthcare,Prof. Robert Public,40 hours,109,4.2,Intermediate,1300
+EDU101,Online Teaching Methods,Effective online education and course design,Education,Dr. Emma Teacher,35 hours,99,4.1,Intermediate,1800
+EDU102,Educational Technology,Technology integration in modern classrooms,Education,Prof. Tom Tech,40 hours,119,4.2,Intermediate,1600
+EDU103,Curriculum Development,Designing effective learning programs and assessments,Education,Dr. Sarah Curriculum,45 hours,129,4.3,Intermediate,1400
+EDU104,Student Assessment,Modern assessment techniques and learning analytics,Education,Prof. Mike Assessment,30 hours,89,4.0,Intermediate,1200

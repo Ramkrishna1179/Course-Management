@@ -1,5 +1,6 @@
 import type { University } from '@/lib/types';
 
+// Sample university data for demonstration
 export const universities: University[] = [
   {
     universityName: 'Innovate University',

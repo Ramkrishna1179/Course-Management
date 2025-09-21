@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// JWT authentication middleware
 const authenticateToken = async (req, res, next) => {
   try {
+    // Extract token from Authorization header
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -13,6 +15,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password');
     
@@ -23,6 +26,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    // Check admin role
     if (user.role !== 'admin') {
       return res.status(403).json({ 
         success: false, 
@@ -52,4 +56,5 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
+// Export authentication middleware
 module.exports = { authenticateToken };

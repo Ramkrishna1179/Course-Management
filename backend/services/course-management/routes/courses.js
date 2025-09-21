@@ -7,20 +7,24 @@ const { cacheMiddleware, clearCache } = require('../middleware/cache');
 
 const router = express.Router();
 
+// Get all courses with filtering and pagination
 router.get('/', cacheMiddleware('courses:list', 'courses'), async (req, res) => {
   try {
     const { page = 1, limit = 10, category, instructor, level, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     
-    // build query for active courses only
+    // Build query for active courses only
     const query = { isActive: true };
     
+    // Add filters if provided
     if (category) query.category = category;
     if (instructor) query.instructor = instructor;
     if (level) query.level = level;
 
+    // Set up sorting
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
+    // Fetch courses with pagination
     const courses = await Course.find(query)
       .sort(sortOptions)
       .limit(limit * 1)
@@ -289,6 +293,67 @@ router.get('/stats/overview', cacheMiddleware('courses:stats', 'stats'), async (
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve course statistics',
+      error: error.message
+    });
+  }
+});
+
+// Update existing courses with student enrollment data
+router.post('/update-enrollments', async (req, res) => {
+  try {
+    // Sample student enrollment data for existing courses
+    const enrollmentData = {
+      'MBA601': 1200,
+      'LAW701': 850,
+      'DATA12': 2100,
+      'MOB103': 1850,
+      'MBA609': 1200,
+      'LAW708': 850,
+      'CS101': 1250,
+      'CS102': 890,
+      'WEB101': 3200,
+      'DATA101': 2800,
+      'MOB101': 1950
+    };
+
+    let updatedCount = 0;
+    const results = [];
+
+    for (const [courseId, enrollment] of Object.entries(enrollmentData)) {
+      try {
+        const course = await Course.findOne({ course_id: courseId });
+        if (course) {
+          course.studentsEnrolled = enrollment;
+          await course.save();
+          await elasticsearchService.indexCourse(course);
+          updatedCount++;
+          results.push({ course_id: courseId, studentsEnrolled: enrollment, status: 'updated' });
+        } else {
+          results.push({ course_id: courseId, status: 'not found' });
+        }
+      } catch (error) {
+        results.push({ course_id: courseId, status: 'error', error: error.message });
+      }
+    }
+
+    // Clear cache to refresh statistics
+    await clearCache('courses:*');
+    await clearCache('search:*');
+
+    res.json({
+      success: true,
+      message: `Updated ${updatedCount} courses with student enrollment data`,
+      data: {
+        updatedCount,
+        results
+      }
+    });
+
+  } catch (error) {
+    console.error('Update enrollments error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update student enrollments',
       error: error.message
     });
   }

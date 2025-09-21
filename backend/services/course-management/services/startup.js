@@ -1,9 +1,11 @@
 const redisService = require('./redisService');
 const elasticsearchService = require('./elasticsearchService');
 
+// Initialize all external services
 async function initializeServices() {
   console.log('Initializing Course Management Services...');
 
+  // Initialize Redis for caching
   try {
     const redisConnected = await redisService.connect();
     if (redisConnected) {
@@ -15,6 +17,7 @@ async function initializeServices() {
     console.log('⚠️  Redis service connection failed - caching disabled');
   }
 
+  // Initialize Elasticsearch for search
   try {
     const elasticsearchConnected = await elasticsearchService.connect();
     if (elasticsearchConnected) {
@@ -29,4 +32,5 @@ async function initializeServices() {
   console.log('Course Management Services initialization completed');
 }
 
+// Export service initialization function
 module.exports = { initializeServices };

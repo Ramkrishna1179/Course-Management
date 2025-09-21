@@ -1,15 +1,130 @@
-# Course Management System
+# Course Management Platform
 
-A MERN stack application with microservices architecture for managing courses.
+A MERN stack course management system with microservices architecture, featuring JWT authentication, AI recommendations, Elasticsearch search, and Redis caching.
+
+## What's Built
+
+- **3 Microservices**: Auth, Course Management, and AI Recommendations
+- **Frontend**: React with Next.js and TypeScript
+- **Database**: MongoDB for data storage
+- **Search**: Elasticsearch for full-text search
+- **Caching**: Redis for performance optimization
+- **AI**: Gemini AI for course recommendations
+- **Docker**: Containerized AI service
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+
+- MongoDB (local or Atlas)
+- Redis server
+- Elasticsearch server
+
+### Installation
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/Ramkrishna1179/Course-Management.git
+cd Course-management
+```
+
+2. **Install backend dependencies:**
+```bash
+cd backend/services/auth && npm install
+cd ../course-management && npm install
+cd ../ai-recommendation && npm install
+```
+
+3. **Install frontend dependencies:**
+```bash
+cd sampleuniproject-waygood-sampleuniproject
+npm install
+```
+
+4. **Set up environment variables:**
+```bash
+# Copy example.env to .env in each service
+cp backend/example.env backend/.env
+```
+
+5. **Start the services:**
+```bash
+# Terminal 1 - Auth Service
+cd backend/services/auth
+npm start
+
+# Terminal 2 - Course Management Service
+cd backend/services/course-management
+npm start
+
+# Terminal 3 - AI Recommendation Service
+cd backend/services/ai-recommendation
+npm start
+
+# Terminal 4 - Frontend
+cd sampleuniproject-waygood-sampleuniproject
+npm run dev
+```
+
+## API Endpoints
+
+### Authentication Service (Port 3001)
+- `POST /api/auth/signup` - Admin signup
+- `POST /api/auth/login` - Admin login
+- `GET /api/auth/profile` - Get profile (protected)
+
+### Course Management Service (Port 3002)
+- `GET /api/courses` - Get all courses
+- `GET /api/courses/:id` - Get single course
+- `POST /api/upload/csv` - Upload course data
+- `GET /api/search/courses` - Search courses
+- `GET /api/courses/stats/overview` - Course statistics
+
+### AI Recommendation Service (Port 3003)
+- `POST /api/recommendations` - Get AI recommendations
+- `GET /api/recommendations/sample` - Get sample recommendations
+
+## Docker Setup
+
+### AI Service (Dockerized)
+```bash
+cd backend/services/ai-recommendation
+docker build -t ai-service .
+docker run -d -p 3003:3003 --name ai-container ai-service
+```
+
+### Test the AI Service
+```bash
+# Health check
+curl http://localhost:3003/health
+
+# Sample recommendations
+curl http://localhost:3003/api/recommendations/sample
+```
+
+## Tech Stack
+
+**Backend:**
+- Node.js & Express
+- MongoDB
+- Redis
+- Elasticsearch
+- JWT Authentication
+
+**Frontend:**
+- React 18
+- Next.js
+- Redux Toolkit
+- TypeScript
 
 ## Features
 
-- 3 Backend Microservices (Auth, Course Management, AI Recommendations)
-- React Frontend with Redux
-- MongoDB for data storage
-- Redis for caching
-- Elasticsearch for search
-- Docker support
+- Admin authentication with JWT
+- Course search with Elasticsearch
+- CSV upload for course data
+- AI-powered course recommendations
+- Redis caching for performance
+- Responsive frontend design
 
 ## Test Credentials
 
@@ -17,123 +132,33 @@ A MERN stack application with microservices architecture for managing courses.
 - Email: `Ramyadav@gmail.com`
 - Password: `Ram@1234`
 
-**User Login:**
-- Email: `user@gmail.com`
-- Password: `Ram@1234`
+## Project Structure
 
-*These credentials are connected to MongoDB Atlas for testing purposes.*
-
-## Setup
-
-**Requirements:**
-- Node.js 18+
-- MongoDB running on port 27017
-- Redis running on port 6379
-- Elasticsearch running on port 9200
-
-**Start Backend:**
-```bash
-# Auth Service (port 3001)
-cd backend/services/auth
-npm install
-npm start
-
-# Course Management Service (port 3002)
-cd backend/services/course-management
-npm install
-npm start
-
-# AI Recommendation Service (port 3003)
-cd backend/services/ai-recommendation
-npm install
-npm start
+```
+Course-management/
+├── backend/
+│   ├── services/
+│   │   ├── auth/                 # Authentication service
+│   │   ├── course-management/    # Course management service
+│   │   └── ai-recommendation/    # AI recommendation service
+│   └── example.env
+├── sampleuniproject-waygood-sampleuniproject/
+│   ├── src/
+│   │   ├── app/                  # Next.js pages
+│   │   ├── components/           # React components
+│   │   └── lib/                  # Utilities and store
+│   └── package.json
+└── README.md
 ```
 
-**Start Frontend:**
-```bash
-cd sampleuniproject-waygood-sampleuniproject
-npm install
-npm run dev
-```
+## Development Notes
 
-## Features
+- Each service runs independently
+- Services communicate via HTTP APIs
+- Frontend connects to all backend services
+- Docker is only used for AI service
+- All services have health check endpoints
 
-- Admin login and authentication
-- Course search with filters
-- CSV upload for course data
-- AI-powered course recommendations
-- Course details pages
-- Admin dashboard
+## License
 
-## Docker
-
-### AI Recommendations Service (Dockerized)
-
-**Build and Run:**
-```bash
-cd backend/services/ai-recommendation
-docker build -t ai-service .
-docker run -d -p 3003:3003 --name ai-container ai-service
-```
-
-**Docker Commands Cheat Sheet:**
-```bash
-# Build Docker Image
-docker build -t ai-service .
-
-# Run Container
-docker run -d -p 3003:3003 --name ai-container ai-service
-
-# See Running Containers
-docker ps
-
-# Stop Container
-docker stop ai-container
-
-# Start Stopped Container
-docker start ai-container
-
-# Remove Container
-docker rm ai-container
-
-# View Logs
-docker logs ai-container
-docker logs -f ai-container  # Live logs
-
-# Enter Container Shell (Debugging)
-docker exec -it ai-container sh
-
-# Restart Container
-docker restart ai-container
-
-# Cleanup
-docker container prune  # Remove stopped containers
-docker image prune -a   # Remove unused images
-```
-
-**Test the Service:**
-```bash
-# Health check
-curl http://localhost:3003/health
-
-# Sample recommendations
-curl http://localhost:3003/api/recommendations/sample
-
-# Custom recommendations
-curl -X POST http://localhost:3003/api/recommendations \
-  -H "Content-Type: application/json" \
-  -d '{"topics": ["machine learning"], "skillLevel": "Beginner"}'
-```
-
-## API Endpoints
-
-- POST /api/auth/login - Admin login
-- GET /api/courses - Get all courses
-- GET /api/search/courses - Search courses
-- POST /api/upload/csv - Upload course data
-- POST /api/recommendations - Get AI recommendations
-
-## Tech Stack
-
-**Backend:** Node.js, Express, MongoDB, Redis, Elasticsearch, JWT
-**Frontend:** React, Next.js, TypeScript, Redux Toolkit, Tailwind CSS
+MIT License

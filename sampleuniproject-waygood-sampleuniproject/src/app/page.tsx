@@ -17,6 +17,7 @@ import { Compass, Search, SlidersHorizontal, Sparkles, Loader2, DollarSign, Cale
 import { apiService } from '@/lib/api';
 
 export default function Home() {
+  // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('all');
   const [tuitionRange, setTuitionRange] = useState([0, 50000]);
@@ -41,10 +42,12 @@ export default function Home() {
     setShowCourseModal(false);
   };
 
+  // University options for dropdown
   const universityOptions = useMemo(() => {
     return universities.map((uni) => ({ value: uni.uniqueCode, label: uni.universityName }));
   }, []);
 
+  // Course levels based on data source
   const courseLevels = useMemo(() => {
     if (useBackend) {
       // For backend data, use the actual levels from the backend
@@ -148,7 +151,7 @@ export default function Home() {
           setBackendCourses(transformedCourses);
         }
       } catch (error) {
-        console.error('Error loading backend courses:', error);
+        // Handle error silently in production
       } finally {
         setIsLoading(false);
       }
@@ -164,6 +167,7 @@ export default function Home() {
     }
   }, [useBackend, searchTerm, courseLevel, tuitionRange]);
 
+  // Filter courses based on data source
   const filteredCourses = useMemo(() => {
     if (useBackend) {
       // For backend courses, filtering is done server-side, so return courses as-is
@@ -207,6 +211,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Search and filter section */}
       <section id="search" className="container mx-auto py-12 px-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <aside className="lg:col-span-1">
@@ -309,26 +314,30 @@ export default function Home() {
                 </Button>
               </div>
             </div>
+            {/* Loading state */}
             {isLoading ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-2 text-muted-foreground">Loading courses...</span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredCourses.map((course) => (
-                  <div key={course.uniqueId} onClick={() => openCourseDetails(course)} className="cursor-pointer">
-                    <CourseCard course={course} />
+              <>
+                {/* Course grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredCourses.map((course) => (
+                    <div key={course.uniqueId} onClick={() => openCourseDetails(course)} className="cursor-pointer">
+                      <CourseCard course={course} />
+                    </div>
+                  ))}
+                </div>
+                {filteredCourses.length === 0 && (
+                  <div className="flex flex-col items-center justify-center text-center bg-card rounded-lg p-12 h-full">
+                    <Search className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-xl font-semibold text-primary">No Courses Found</h3>
+                    <p className="text-muted-foreground mt-2">Try adjusting your filters to find what you're looking for.</p>
                   </div>
-                ))}
-              </div>
-            )}
-            {filteredCourses.length === 0 && (
-              <div className="flex flex-col items-center justify-center text-center bg-card rounded-lg p-12 h-full">
-                <Search className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                <h3 className="text-xl font-semibold text-primary">No Courses Found</h3>
-                <p className="text-muted-foreground mt-2">Try adjusting your filters to find what you're looking for.</p>
-              </div>
+                )}
+              </>
             )}
           </main>
         </div>
@@ -407,7 +416,6 @@ export default function Home() {
           )}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

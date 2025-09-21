@@ -3,8 +3,196 @@ const { body, validationResult } = require('express-validator');
 const elasticsearchService = require('../services/elasticsearchService');
 const redisService = require('../services/redisService');
 const { cacheMiddleware } = require('../middleware/cache');
+const Course = require('../models/Course');
 
 const router = express.Router();
+
+// Debug endpoint to check database content
+router.get('/test-courses', async (req, res) => {
+  try {
+    // Check what's actually in the database
+    const allCourses = await Course.find({}).limit(5);
+    const activeCourses = await Course.find({ isActive: true }).limit(5);
+    const totalAll = await Course.countDocuments({});
+    const totalActive = await Course.countDocuments({ isActive: true });
+    
+    console.log('All courses count:', totalAll);
+    console.log('Active courses count:', totalActive);
+    console.log('Sample course:', allCourses[0] || 'No courses found');
+    
+    res.json({
+      success: true,
+      message: 'Test courses retrieved',
+      data: {
+        allCourses,
+        activeCourses,
+        totalAll,
+        totalActive,
+        count: allCourses.length
+      }
+    });
+  } catch (error) {
+    console.error('Test courses error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get test courses',
+      error: error.message
+    });
+  }
+});
+
+// Simple search test endpoint
+router.get('/test-search', async (req, res) => {
+  try {
+    const { level, maxPrice, minPrice, minRating } = req.query;
+    
+    let query = { isActive: true };
+    
+    if (level) {
+      query.level = level;
+    }
+    
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) {
+        query.price.$gte = parseFloat(minPrice);
+      }
+      if (maxPrice) {
+        query.price.$lte = parseFloat(maxPrice);
+      }
+    }
+    
+    if (minRating) {
+      query.rating = { $gte: parseFloat(minRating) };
+    }
+    
+    console.log('Test search query:', query);
+    
+    const courses = await Course.find(query).limit(10);
+    const total = await Course.countDocuments(query);
+    
+    res.json({
+      success: true,
+      message: 'Test search completed',
+      data: {
+        courses,
+        total,
+        query
+      }
+    });
+  } catch (error) {
+    console.error('Test search error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to test search',
+      error: error.message
+    });
+  }
+});
+
+// Get filter options for dropdowns
+router.get('/filter-options', async (req, res) => {
+  try {
+    const courses = await Course.find({ isActive: true }).select('category instructor level');
+    
+    const categories = [...new Set(courses.map(c => c.category).filter(Boolean))];
+    const instructors = [...new Set(courses.map(c => c.instructor).filter(Boolean))];
+    const levels = [...new Set(courses.map(c => c.level).filter(Boolean))];
+    
+    res.json({
+      success: true,
+      message: 'Filter options retrieved',
+      data: {
+        categories,
+        instructors,
+        levels
+      }
+    });
+  } catch (error) {
+    console.error('Filter options error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get filter options',
+      error: error.message
+    });
+  }
+});
+
+// MongoDB fallback search function
+const searchCoursesMongoDB = async (query, filters) => {
+  try {
+    // Build MongoDB query - start with basic query
+    const mongoQuery = { isActive: true };
+    
+    // Text search
+    if (query && query.trim()) {
+      mongoQuery.$or = [
+        { title: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+        { category: { $regex: query, $options: 'i' } },
+        { instructor: { $regex: query, $options: 'i' } }
+      ];
+    }
+    
+    // Add filters - be more flexible with matching
+    if (filters.category && filters.category !== 'all') {
+      mongoQuery.category = filters.category; // Exact match for category
+    }
+    if (filters.instructor && filters.instructor !== 'all') {
+      mongoQuery.instructor = filters.instructor; // Exact match for instructor
+    }
+    if (filters.level && filters.level !== 'all') {
+      mongoQuery.level = filters.level; // Exact match for level
+    }
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      mongoQuery.price = {};
+      if (filters.minPrice !== undefined && filters.minPrice >= 0) {
+        mongoQuery.price.$gte = filters.minPrice;
+      }
+      if (filters.maxPrice !== undefined && filters.maxPrice > 0) {
+        mongoQuery.price.$lte = filters.maxPrice;
+      }
+    }
+    if (filters.minRating !== undefined) {
+      mongoQuery.rating = { $gte: filters.minRating };
+    }
+    
+    // Build sort options
+    const sortOptions = {};
+    if (filters.sortBy) {
+      sortOptions[filters.sortBy] = filters.sortOrder === 'asc' ? 1 : -1;
+    } else {
+      sortOptions.rating = -1;
+      sortOptions.studentsEnrolled = -1;
+    }
+    
+    
+    // Execute query
+    const courses = await Course.find(mongoQuery)
+      .sort(sortOptions)
+      .skip(filters.from || 0)
+      .limit(filters.size || 10)
+      .select('-__v');
+    
+    const total = await Course.countDocuments(mongoQuery);
+    
+    const hits = courses.map(course => ({
+      _id: course._id,
+      _score: 1.0, // Default score for MongoDB results
+      ...course.toObject()
+    }));
+
+
+    return {
+      hits,
+      total,
+      took: 0 // MongoDB doesn't provide search time
+    };
+  } catch (error) {
+    console.error('MongoDB search error:', error);
+    return { hits: [], total: 0, error: error.message };
+  }
+};
 
 // GET endpoint for simple search with query parameters
 router.get('/courses', cacheMiddleware('search:courses', 'search'), async (req, res) => {
@@ -36,7 +224,15 @@ router.get('/courses', cacheMiddleware('search:courses', 'search'), async (req, 
       size: parseInt(limit)
     };
 
-    const searchResults = await elasticsearchService.searchCourses(query, filters);
+    let searchResults;
+    
+    // Debug logging
+    console.log('Elasticsearch connected:', elasticsearchService.isConnected);
+    console.log('Search parameters:', { query, filters });
+    
+    // Force MongoDB fallback for now (since Elasticsearch is not working)
+    console.log('Using MongoDB fallback for search');
+    searchResults = await searchCoursesMongoDB(query, filters);
 
     if (searchResults.error) {
       return res.status(500).json({
@@ -52,17 +248,12 @@ router.get('/courses', cacheMiddleware('search:courses', 'search'), async (req, 
       success: true,
       message: 'Search completed successfully',
       data: {
-        query,
-        filters,
-        results: searchResults.hits,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages,
-          totalResults: searchResults.total,
-          hasNext: page < totalPages,
-          hasPrev: page > 1,
-          resultsPerPage: parseInt(limit)
-        },
+        courses: searchResults.hits,
+        total: searchResults.total,
+        page: parseInt(page),
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
         searchTime: searchResults.took,
         cached: false
       }
@@ -116,7 +307,15 @@ router.post('/courses', cacheMiddleware('search:courses', 'search'), async (req,
       size: parseInt(limit)
     };
 
-    const searchResults = await elasticsearchService.searchCourses(query, filters);
+    let searchResults;
+    
+    // Debug logging
+    console.log('Elasticsearch connected:', elasticsearchService.isConnected);
+    console.log('Search parameters:', { query, filters });
+    
+    // Force MongoDB fallback for now (since Elasticsearch is not working)
+    console.log('Using MongoDB fallback for search');
+    searchResults = await searchCoursesMongoDB(query, filters);
 
     if (searchResults.error) {
       return res.status(500).json({
@@ -132,17 +331,12 @@ router.post('/courses', cacheMiddleware('search:courses', 'search'), async (req,
       success: true,
       message: 'Search completed successfully',
       data: {
-        query,
-        filters,
-        results: searchResults.hits,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages,
-          totalResults: searchResults.total,
-          hasNext: page < totalPages,
-          hasPrev: page > 1,
-          resultsPerPage: parseInt(limit)
-        },
+        courses: searchResults.hits,
+        total: searchResults.total,
+        page: parseInt(page),
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
         searchTime: searchResults.took,
         cached: false
       }

@@ -1,20 +1,21 @@
 const axios = require('axios');
 
+// Gemini AI service for course recommendations
 class GeminiService {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY;
     this.baseURL = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
   }
 
+  // Generate course recommendations using Gemini AI
   async generateRecommendations(userPreferences) {
     try {
       const { topics, skillLevel, duration, interests } = userPreferences;
       
       const prompt = this.buildPrompt(topics, skillLevel, duration, interests);
       
-      // fallback to mock data if api key not set
+      // Fallback to mock data if API key not configured
       if (!this.apiKey || this.apiKey === 'your_gemini_api_key_here') {
-        console.log('Using mock recommendations (API key not configured)');
         return this.getMockRecommendations(userPreferences);
       }
 
@@ -44,7 +45,6 @@ class GeminiService {
       return this.parseRecommendations(generatedText);
 
     } catch (error) {
-      console.error('Gemini API Error:', error.message);
       return this.getMockRecommendations(userPreferences);
     }
   }
@@ -78,6 +78,7 @@ Please provide course recommendations in the following JSON format:
 Make the recommendations relevant, practical, and diverse. Focus on courses that match the user's skill level and interests.`;
   }
 
+  // Parse AI-generated recommendations from text
   parseRecommendations(generatedText) {
     try {
       const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
@@ -86,11 +87,11 @@ Make the recommendations relevant, practical, and diverse. Focus on courses that
       }
       throw new Error('No valid JSON found');
     } catch (error) {
-      console.error('Error parsing Gemini response:', error);
       return this.getMockRecommendations();
     }
   }
 
+  // Generate mock recommendations for testing
   getMockRecommendations(userPreferences = {}) {
     const { topics = ['Web Development'], skillLevel = 'Beginner', duration = '10-20 hours' } = userPreferences;
     
@@ -159,4 +160,5 @@ Make the recommendations relevant, practical, and diverse. Focus on courses that
   }
 }
 
+// Export Gemini service instance
 module.exports = new GeminiService();

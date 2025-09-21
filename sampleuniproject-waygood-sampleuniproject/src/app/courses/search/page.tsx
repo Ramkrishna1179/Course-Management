@@ -37,19 +37,20 @@ interface SearchResults {
 }
 
 export default function CourseSearchPage() {
+  // State management
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
 
-  // search parameters
+  // Search parameters state
   const [searchParams, setSearchParams] = useState({
     query: '',
     category: 'all',
     instructor: 'all',
     level: 'all',
     minPrice: 0,
-    maxPrice: 1000,
+    maxPrice: 50000,
     minRating: 0,
     sortBy: 'rating',
     sortOrder: 'desc',
@@ -72,29 +73,32 @@ export default function CourseSearchPage() {
     performSearch();
   }, [searchParams]);
 
+  // Monitor search results for debugging
+  useEffect(() => {
+    // Search results updated
+  }, [searchResults]);
+
   const loadInitialData = async () => {
     try {
-      // Load filter options
-      const [categoriesRes, instructorsRes, levelsRes] = await Promise.all([
-        apiService.getCourses({ limit: 1, groupBy: 'category' }),
-        apiService.getCourses({ limit: 1, groupBy: 'instructor' }),
-        apiService.getCourses({ limit: 1, groupBy: 'level' })
-      ]);
-
-      if (categoriesRes.success) {
-        const categories = categoriesRes.data.categories || [];
-        setCategories(categories.filter(cat => cat && cat.trim() !== ''));
-      }
-      if (instructorsRes.success) {
-        const instructors = instructorsRes.data.instructors || [];
-        setInstructors(instructors.filter(inst => inst && inst.trim() !== ''));
-      }
-      if (levelsRes.success) {
-        const levels = levelsRes.data.levels || [];
-        setLevels(levels.filter(level => level && level.trim() !== ''));
+      // Load filter options from the new endpoint
+      const response = await fetch('http://localhost:3002/api/search/filter-options');
+      const data = await response.json();
+      
+      if (data.success) {
+        setCategories(data.data.categories || []);
+        setInstructors(data.data.instructors || []);
+        setLevels(data.data.levels || []);
+      } else {
+        // Fallback: Set default options
+        setCategories(['Programming', 'Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Business', 'Law']);
+        setInstructors(['John Doe', 'Jane Smith', 'Bob Johnson', 'Dr. Sarah Wilson', 'Mike Chen', 'Dr. Michael Thompson', 'Prof. Jennifer Martinez']);
+        setLevels(['Beginner', 'Intermediate', 'Advanced']);
       }
     } catch (error) {
-      console.error('Error loading filter options:', error);
+      // Fallback: Set default options
+      setCategories(['Programming', 'Web Development', 'Mobile Development', 'Data Science', 'AI/ML', 'Business', 'Law']);
+      setInstructors(['John Doe', 'Jane Smith', 'Bob Johnson', 'Dr. Sarah Wilson', 'Mike Chen', 'Dr. Michael Thompson', 'Prof. Jennifer Martinez']);
+      setLevels(['Beginner', 'Intermediate', 'Advanced']);
     }
   };
 
@@ -109,18 +113,39 @@ export default function CourseSearchPage() {
         level: searchParams.level === 'all' ? '' : searchParams.level,
       };
       
-      const response = await apiService.searchCourses(apiParams);
+      let response;
+      
+      // Use search API for advanced filtering (supports price and rating)
+      response = await apiService.searchCourses({
+        query: searchParams.query,
+        category: searchParams.category === 'all' ? '' : searchParams.category,
+        instructor: searchParams.instructor === 'all' ? '' : searchParams.instructor,
+        level: searchParams.level === 'all' ? '' : searchParams.level,
+        minPrice: 0, // Always start from 0
+        maxPrice: searchParams.maxPrice,
+        minRating: searchParams.minRating,
+        sortBy: searchParams.sortBy,
+        sortOrder: searchParams.sortOrder,
+        page: searchParams.page,
+        limit: searchParams.limit
+      });
       
       if (response.success) {
+        
         // Ensure the response has the expected structure
         const searchData = response.data || response;
+        
+        // Parse response data
+        const courses = searchData.courses || searchData.results || searchData.hits || [];
+        const total = searchData.total || searchData.count || searchData.totalCourses || courses.length;
+        
         setSearchResults({
-          courses: searchData.courses || searchData.results || [],
-          total: searchData.total || searchData.count || 0,
+          courses: courses,
+          total: total,
           page: searchData.page || searchData.currentPage || 1,
           totalPages: searchData.totalPages || searchData.pages || 1,
-          hasNextPage: searchData.hasNextPage || false,
-          hasPrevPage: searchData.hasPrevPage || false
+          hasNextPage: searchData.hasNextPage || searchData.hasNext || false,
+          hasPrevPage: searchData.hasPrevPage || searchData.hasPrev || false
         });
       } else {
         toast({
@@ -131,7 +156,6 @@ export default function CourseSearchPage() {
         setSearchResults(null);
       }
     } catch (error: any) {
-      console.error('Search error:', error);
       toast({
         variant: 'destructive',
         title: 'Search Error',
@@ -165,7 +189,7 @@ export default function CourseSearchPage() {
       instructor: 'all',
       level: 'all',
       minPrice: 0,
-      maxPrice: 1000,
+      maxPrice: 50000,
       minRating: 0,
       sortBy: 'rating',
       sortOrder: 'desc',
@@ -338,19 +362,22 @@ export default function CourseSearchPage() {
 
                   {/* Price Range */}
                   <div className="md:col-span-2">
-                    <Label>Price Range: ${searchParams.minPrice} - ${searchParams.maxPrice}</Label>
+                  <Label>Max. 1st Year Tuition (USD): Up to ${searchParams.maxPrice.toLocaleString()}</Label>
                     <div className="flex gap-4 mt-2">
                       <Slider
                         min={0}
-                        max={1000}
-                        step={10}
-                        value={[searchParams.minPrice, searchParams.maxPrice]}
-                        onValueChange={([min, max]) => {
-                          handleFilterChange('minPrice', min);
+                      max={50000}
+                      step={1000}
+                      value={[searchParams.maxPrice]}
+                      onValueChange={([max]) => {
                           handleFilterChange('maxPrice', max);
                         }}
                         className="flex-1"
                       />
+                    </div>
+                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                    <span>$0</span>
+                    <span>$50,000</span>
                     </div>
                   </div>
 

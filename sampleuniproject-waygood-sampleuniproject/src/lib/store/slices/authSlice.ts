@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { apiService } from '@/lib/api';
 
-// user type definitions
+// User interface for authentication
 export interface User {
   id: string;
   username: string;
@@ -12,6 +12,7 @@ export interface User {
   updatedAt: string;
 }
 
+// Authentication state interface
 export interface AuthState {
   user: User | null;
   token: string | null;
@@ -20,7 +21,7 @@ export interface AuthState {
   error: string | null;
 }
 
-// initial state
+// Initial authentication state
 const initialState: AuthState = {
   user: null,
   token: null,
@@ -29,7 +30,7 @@ const initialState: AuthState = {
   error: null,
 };
 
-// async thunks
+// Async thunks for authentication
 export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async (_, { rejectWithValue }) => {
@@ -92,7 +93,7 @@ export const logout = createAsyncThunk(
   }
 );
 
-// auth slice
+// Authentication slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -106,7 +107,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Check Auth
+      // Handle checkAuth async thunk
       .addCase(checkAuth.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -144,7 +145,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload as string;
       })
-      // Logout
+      // Handle logout async thunk
       .addCase(logout.pending, (state) => {
         state.isLoading = true;
       })
@@ -162,5 +163,6 @@ const authSlice = createSlice({
   },
 });
 
+// Export actions and reducer
 export const { clearError, setLoading } = authSlice.actions;
 export default authSlice.reducer;

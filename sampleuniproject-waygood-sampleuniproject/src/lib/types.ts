@@ -1,3 +1,4 @@
+// University interface for course management
 export interface University {
   universityName: string;
   uniqueCode: string;
@@ -29,6 +30,7 @@ export interface University {
   campusLife: string;
 }
 
+// Course interface for course management
 export interface Course {
   uniqueId: string;
   courseName: string;

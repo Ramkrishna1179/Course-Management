@@ -1,5 +1,6 @@
 name: Course Management System CI/CD Pipeline
 
+# Trigger on push to main/develop branches and pull requests
 on:
   push:
     branches: [ main, develop ]
@@ -7,6 +8,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Environment variables
 env:
   NODE_VERSION: '18'
   MONGODB_URI: ${{ secrets.MONGODB_URI }}
@@ -16,11 +18,12 @@ env:
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
-  # Job 1: Code Quality and Testing
+  # Run tests and code quality checks
   test:
     name: Test and Code Quality
     runs-on: ubuntu-latest
     
+    # Services for testing
     services:
       mongodb:
         image: mongo:6.0
@@ -78,7 +81,7 @@ jobs:
         cd ../course-management && npm audit --audit-level moderate || true
         cd ../ai-recommendation && npm audit --audit-level moderate || true
 
-  # Job 2: Build Docker Images
+  # Build Docker images for deployment
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
@@ -131,7 +134,7 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  # Job 3: Deploy to Staging
+  # Deploy to staging environment
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
@@ -163,7 +166,7 @@ jobs:
           curl -f http://localhost:3002/health || exit 1
           curl -f http://localhost:3003/health || exit 1
 
-  # Job 4: Deploy to Production
+  # Deploy to production environment
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
@@ -195,7 +198,7 @@ jobs:
           # Update load balancer
           nginx -s reload
 
-  # Job 5: Notify Deployment
+  # Send deployment notifications
   notify:
     name: Notify Deployment Status
     runs-on: ubuntu-latest

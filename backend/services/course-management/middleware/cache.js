@@ -1,18 +1,21 @@
 const redisService = require('../services/redisService');
 
+// Redis cache middleware for API responses
 const cacheMiddleware = (prefix, cacheType = 'default') => {
   return async (req, res, next) => {
     try {
+      // Generate cache key from request parameters
       const cacheKey = redisService.generateCacheKey(prefix, {
         ...req.query,
         ...req.params,
         path: req.path
       });
 
+      // Check if data exists in cache
       const cachedData = await redisService.get(cacheKey);
       
       if (cachedData) {
-        // Cache hit - returning cached data
+        // Cache hit - return cached data
         return res.json({
           success: true,
           message: 'Data retrieved from cache',
@@ -22,9 +25,9 @@ const cacheMiddleware = (prefix, cacheType = 'default') => {
         });
       }
 
-      // Cache miss - fetching from database
+      // Cache miss - proceed to database
       
-      // get expiry time based on cache type (in seconds)
+      // Get cache expiry time based on data type
       const getExpiryTime = (type) => {
         switch (type) {
           case 'courses':
@@ -63,6 +66,7 @@ const cacheMiddleware = (prefix, cacheType = 'default') => {
   };
 };
 
+// Clear cache entries by pattern
 const clearCache = async (pattern) => {
   try {
     if (!redisService.isConnected) {
@@ -81,6 +85,7 @@ const clearCache = async (pattern) => {
   }
 };
 
+// Export cache middleware functions
 module.exports = {
   cacheMiddleware,
   clearCache

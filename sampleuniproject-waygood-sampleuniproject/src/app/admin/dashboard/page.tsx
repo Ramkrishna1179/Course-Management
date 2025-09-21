@@ -231,17 +231,50 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleUpdateEnrollments = async () => {
+    try {
+      const response = await apiService.updateEnrollments();
+      if (response.success) {
+        toast({
+          title: <div className="flex items-center gap-2"><CheckCircle className="text-green-500" /> Student Data Updated</div>,
+          description: `Successfully updated ${response.data.updatedCount} courses with student enrollment data`,
+          duration: 6000,
+        });
+        
+        // Reload stats
+        const statsResponse = await apiService.getCourseStats();
+        if (statsResponse.success) {
+          setStats(statsResponse.data);
+        }
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Update Failed',
+          description: response.message || 'Failed to update student data',
+          duration: 5000,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Update Error',
+        description: error.message || 'Failed to update student data',
+        duration: 5000,
+      });
+    }
+  };
+
   const handleCourseTemplateDownload = () => {
     const headers = [
       "course_id", "title", "description", "category", "instructor", 
-      "duration", "price", "rating", "level", "thumbnail", "tags", "language"
+      "duration", "price", "rating", "level", "studentsEnrolled", "tags", "language"
     ];
     
     // Sample data row
     const sampleRow = [
       "CS101", "Introduction to Programming", "Learn basic programming concepts", 
-      "Programming", "John Doe", "40 hours", "99", "4.5", "Beginner", 
-      "https://example.com/image.jpg", "programming,basics", "English"
+      "Programming", "John Doe", "40 hours", "99", "4.5", "Beginner", "1250",
+      "programming,basics", "English"
     ];
     
     const csvContent = [
@@ -271,7 +304,7 @@ export default function AdminDashboardPage() {
           <p className="text-muted-foreground mb-8">Manage course data and view analytics.</p>
       
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -318,11 +351,29 @@ export default function AdminDashboardPage() {
                   {isLoadingStats ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                   ) : (
-                    stats?.averageRating || 0
+                    stats?.averageRating ? stats.averageRating.toFixed(1) : '0.0'
                   )}
                 </p>
               </div>
               <BarChart3 className="h-8 w-8 text-accent" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Categories</p>
+                <p className="text-2xl font-bold">
+                  {isLoadingStats ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    stats?.categoryBreakdown?.length || 0
+                  )}
+                </p>
+              </div>
+              <Building2 className="h-8 w-8 text-accent" />
             </div>
           </CardContent>
         </Card>
@@ -361,9 +412,9 @@ export default function AdminDashboardPage() {
               <BarChart3 className="mr-2 h-4 w-4" />
               View Analytics
             </Button>
-            <Button className="w-full" variant="outline">
+            <Button className="w-full" variant="outline" onClick={handleUpdateEnrollments}>
               <Users className="mr-2 h-4 w-4" />
-              Manage Users
+              Update Student Data
             </Button>
           </CardContent>
         </Card>
