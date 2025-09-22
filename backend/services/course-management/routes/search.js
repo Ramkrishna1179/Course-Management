@@ -7,116 +7,6 @@ const Course = require('../models/Course');
 
 const router = express.Router();
 
-// Debug endpoint to check database content
-router.get('/test-courses', async (req, res) => {
-  try {
-    // Check what's actually in the database
-    const allCourses = await Course.find({}).limit(5);
-    const activeCourses = await Course.find({ isActive: true }).limit(5);
-    const totalAll = await Course.countDocuments({});
-    const totalActive = await Course.countDocuments({ isActive: true });
-    
-    console.log('All courses count:', totalAll);
-    console.log('Active courses count:', totalActive);
-    console.log('Sample course:', allCourses[0] || 'No courses found');
-    
-    res.json({
-      success: true,
-      message: 'Test courses retrieved',
-      data: {
-        allCourses,
-        activeCourses,
-        totalAll,
-        totalActive,
-        count: allCourses.length
-      }
-    });
-  } catch (error) {
-    console.error('Test courses error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get test courses',
-      error: error.message
-    });
-  }
-});
-
-// Simple search test endpoint
-router.get('/test-search', async (req, res) => {
-  try {
-    const { level, maxPrice, minPrice, minRating } = req.query;
-    
-    let query = { isActive: true };
-    
-    if (level) {
-      query.level = level;
-    }
-    
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) {
-        query.price.$gte = parseFloat(minPrice);
-      }
-      if (maxPrice) {
-        query.price.$lte = parseFloat(maxPrice);
-      }
-    }
-    
-    if (minRating) {
-      query.rating = { $gte: parseFloat(minRating) };
-    }
-    
-    console.log('Test search query:', query);
-    
-    const courses = await Course.find(query).limit(10);
-    const total = await Course.countDocuments(query);
-    
-    res.json({
-      success: true,
-      message: 'Test search completed',
-      data: {
-        courses,
-        total,
-        query
-      }
-    });
-  } catch (error) {
-    console.error('Test search error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to test search',
-      error: error.message
-    });
-  }
-});
-
-// Get filter options for dropdowns
-router.get('/filter-options', async (req, res) => {
-  try {
-    const courses = await Course.find({ isActive: true }).select('category instructor level');
-    
-    const categories = [...new Set(courses.map(c => c.category).filter(Boolean))];
-    const instructors = [...new Set(courses.map(c => c.instructor).filter(Boolean))];
-    const levels = [...new Set(courses.map(c => c.level).filter(Boolean))];
-    
-    res.json({
-      success: true,
-      message: 'Filter options retrieved',
-      data: {
-        categories,
-        instructors,
-        levels
-      }
-    });
-  } catch (error) {
-    console.error('Filter options error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get filter options',
-      error: error.message
-    });
-  }
-});
 
 // MongoDB fallback search function
 const searchCoursesMongoDB = async (query, filters) => {
@@ -225,13 +115,6 @@ router.get('/courses', cacheMiddleware('search:courses', 'search'), async (req, 
     };
 
     let searchResults;
-    
-    // Debug logging
-    console.log('Elasticsearch connected:', elasticsearchService.isConnected);
-    console.log('Search parameters:', { query, filters });
-    
-    // Force MongoDB fallback for now (since Elasticsearch is not working)
-    console.log('Using MongoDB fallback for search');
     searchResults = await searchCoursesMongoDB(query, filters);
 
     if (searchResults.error) {
@@ -308,13 +191,6 @@ router.post('/courses', cacheMiddleware('search:courses', 'search'), async (req,
     };
 
     let searchResults;
-    
-    // Debug logging
-    console.log('Elasticsearch connected:', elasticsearchService.isConnected);
-    console.log('Search parameters:', { query, filters });
-    
-    // Force MongoDB fallback for now (since Elasticsearch is not working)
-    console.log('Using MongoDB fallback for search');
     searchResults = await searchCoursesMongoDB(query, filters);
 
     if (searchResults.error) {
@@ -405,7 +281,30 @@ router.get('/filters', cacheMiddleware('search:filters', 'single'), async (req, 
 async function getSearchSuggestions(query, type) {
   try {
     if (!elasticsearchService.isConnected) {
-      return [];
+      // Fallback to MongoDB for suggestions
+      const courses = await Course.find({
+        $or: [
+          { title: { $regex: query, $options: 'i' } },
+          { category: { $regex: query, $options: 'i' } },
+          { instructor: { $regex: query, $options: 'i' } }
+        ],
+        isActive: true
+      }).limit(10).select('title category instructor');
+      
+      const suggestions = [];
+      courses.forEach(course => {
+        if (course.title.toLowerCase().includes(query.toLowerCase())) {
+          suggestions.push({ text: course.title, type: 'title', score: 1.0 });
+        }
+        if (course.category.toLowerCase().includes(query.toLowerCase())) {
+          suggestions.push({ text: course.category, type: 'category', score: 1.0 });
+        }
+        if (course.instructor.toLowerCase().includes(query.toLowerCase())) {
+          suggestions.push({ text: course.instructor, type: 'instructor', score: 1.0 });
+        }
+      });
+      
+      return suggestions.slice(0, 10);
     }
 
     const searchBody = {
@@ -466,17 +365,32 @@ async function getSearchSuggestions(query, type) {
 async function getAvailableFilters() {
   try {
     if (!elasticsearchService.isConnected) {
+      // Fallback to MongoDB for filter options
+      const courses = await Course.find({ isActive: true }).select('category instructor level price');
+      
+      const categories = [...new Set(courses.map(c => c.category).filter(Boolean))].map(cat => ({
+        value: cat,
+        count: courses.filter(c => c.category === cat).length
+      }));
+      
+      const instructors = [...new Set(courses.map(c => c.instructor).filter(Boolean))].map(inst => ({
+        value: inst,
+        count: courses.filter(c => c.instructor === inst).length
+      }));
+      
+      const priceRanges = [
+        { label: 'Free', min: 0, max: 0 },
+        { label: 'Under $50', min: 0, max: 50 },
+        { label: '$50 - $100', min: 50, max: 100 },
+        { label: '$100 - $200', min: 100, max: 200 },
+        { label: 'Over $200', min: 200, max: null }
+      ];
+      
       return {
-        categories: [],
-        instructors: [],
+        categories,
+        instructors,
         levels: ['Beginner', 'Intermediate', 'Advanced'],
-        priceRanges: [
-          { label: 'Free', min: 0, max: 0 },
-          { label: 'Under $50', min: 0, max: 50 },
-          { label: '$50 - $100', min: 50, max: 100 },
-          { label: '$100 - $200', min: 100, max: 200 },
-          { label: 'Over $200', min: 200, max: null }
-        ]
+        priceRanges
       };
     }
 

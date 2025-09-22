@@ -112,7 +112,10 @@ router.post('/', async (req, res) => {
     const course = new Course(courseData);
     await course.save();
 
-    await elasticsearchService.indexCourse(course);
+    // Index to Elasticsearch if available (optional)
+    if (elasticsearchService.isConnected) {
+      await elasticsearchService.indexCourse(course);
+    }
     await clearCache('courses:*');
 
     res.status(201).json({
@@ -180,7 +183,10 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    await elasticsearchService.indexCourse(course);
+    // Index to Elasticsearch if available (optional)
+    if (elasticsearchService.isConnected) {
+      await elasticsearchService.indexCourse(course);
+    }
     await clearCache('courses:*');
 
     res.json({
@@ -232,7 +238,10 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    await elasticsearchService.deleteCourse(course._id.toString());
+    // Delete from Elasticsearch if available (optional)
+    if (elasticsearchService.isConnected) {
+      await elasticsearchService.deleteCourse(course._id.toString());
+    }
     await clearCache('courses:*');
 
     res.json({
@@ -325,7 +334,10 @@ router.post('/update-enrollments', async (req, res) => {
         if (course) {
           course.studentsEnrolled = enrollment;
           await course.save();
-          await elasticsearchService.indexCourse(course);
+          // Index to Elasticsearch if available (optional)
+          if (elasticsearchService.isConnected) {
+            await elasticsearchService.indexCourse(course);
+          }
           updatedCount++;
           results.push({ course_id: courseId, studentsEnrolled: enrollment, status: 'updated' });
         } else {

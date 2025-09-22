@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, Building2, CheckCircle, Download, Loader2, BarChart3, Users, BookOpen } from 'lucide-react';
+import { Upload, FileText, Building2, CheckCircle, Download, Loader2, BarChart3, Users, BookOpen, RefreshCw } from 'lucide-react';
 import { apiService } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/lib/store/hooks';
 
 function UploadCard({ title, description, onUpload, onDownloadTemplate }: { title: string, description: string, onUpload: (file: File) => void, onDownloadTemplate?: () => void }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -100,33 +101,63 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  
+  // Get authentication state from Redux
+  const { user, isAuthenticated, isLoading: authLoading } = useAppSelector((state) => state.auth);
 
   // Load user profile and dashboard statistics
   useEffect(() => {
     const loadData = async () => {
+      // Only load data if user is authenticated
+      if (!isAuthenticated || !user || authLoading) {
+        return;
+      }
+
+      // If data is already loaded, don't reload unless explicitly requested
+      if (dataLoaded && stats && userProfile) {
+        return;
+      }
+
       setIsLoadingStats(true);
       try {
-        // Load user profile
-        const profileResponse = await apiService.getProfile();
+        // Load user profile and dashboard statistics in parallel
+        const [profileResponse, statsResponse] = await Promise.all([
+          apiService.getProfile(),
+          apiService.getCourseStats()
+        ]);
+
         if (profileResponse.success) {
           setUserProfile(profileResponse.data);
         }
 
-        // Load dashboard statistics
-        const statsResponse = await apiService.getCourseStats();
         if (statsResponse.success) {
           setStats(statsResponse.data);
         }
+
+        setDataLoaded(true);
       } catch (error) {
-        // Handle loading error
+        console.error('Error loading dashboard data:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error Loading Data',
+          description: 'Failed to load dashboard data. Please try again.',
+          duration: 5000,
+        });
       } finally {
         setIsLoadingStats(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [isAuthenticated, user, authLoading, dataLoaded, stats, userProfile, toast]);
 
+  // Manual refresh function
+  const refreshData = async () => {
+    setDataLoaded(false);
+    setStats(null);
+    setUserProfile(null);
+  };
 
   const handleCourseUpload = async (file: File) => {
     try {
@@ -142,10 +173,7 @@ export default function AdminDashboardPage() {
         });
         
         // Reload stats
-        const statsResponse = await apiService.getCourseStats();
-        if (statsResponse.success) {
-          setStats(statsResponse.data);
-        }
+        await refreshData();
       } else {
         // Handle validation errors with detailed messages
         if (response.errors && response.errors.length > 0) {
@@ -242,10 +270,7 @@ export default function AdminDashboardPage() {
         });
         
         // Reload stats
-        const statsResponse = await apiService.getCourseStats();
-        if (statsResponse.success) {
-          setStats(statsResponse.data);
-        }
+        await refreshData();
       } else {
         toast({
           variant: 'destructive',
@@ -300,8 +325,24 @@ export default function AdminDashboardPage() {
     <ProtectedRoute requiredRole="admin">
       <div className="min-h-screen bg-background">
         <div className="container mx-auto py-12 px-4">
-          <h2 className="font-headline text-4xl font-bold mb-2 text-primary">Admin Dashboard</h2>
-          <p className="text-muted-foreground mb-8">Manage course data and view analytics.</p>
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h2 className="font-headline text-4xl font-bold mb-2 text-primary">Admin Dashboard</h2>
+              <p className="text-muted-foreground">
+                {userProfile ? `Welcome back, ${userProfile.username || userProfile.email}!` : 'Manage course data and view analytics.'}
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refreshData}
+              disabled={isLoadingStats}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoadingStats ? 'animate-spin' : ''}`} />
+              Refresh Data
+            </Button>
+          </div>
       
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

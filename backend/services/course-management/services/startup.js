@@ -17,16 +17,16 @@ async function initializeServices() {
     console.log('⚠️  Redis service connection failed - caching disabled');
   }
 
-  // Initialize Elasticsearch for search
+  // Initialize Elasticsearch for enhanced search 
   try {
     const elasticsearchConnected = await elasticsearchService.connect();
     if (elasticsearchConnected) {
-      console.log('✅ Elasticsearch service connected successfully');
+      console.log('✅ Elasticsearch service connected - enhanced search enabled');
     } else {
-      console.log('⚠️  Elasticsearch service connection failed - search functionality limited');
+      console.log('ℹ️  Elasticsearch not available - using MongoDB-only mode (fully functional)');
     }
   } catch (error) {
-    console.log('⚠️  Elasticsearch service connection failed - search functionality limited');
+    console.log('ℹ️  Elasticsearch initialization skipped - application fully functional with MongoDB');
   }
 
   console.log('Course Management Services initialization completed');

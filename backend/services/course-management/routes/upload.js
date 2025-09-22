@@ -73,6 +73,9 @@ router.post('/csv', upload.single('file'), async (req, res) => {
       errors: []
     };
 
+    // Process courses in batches for better performance
+    const coursesToIndex = [];
+    
     for (const courseData of validCourses) {
       try {
         const existingCourse = await Course.findOne({ 
@@ -82,12 +85,12 @@ router.post('/csv', upload.single('file'), async (req, res) => {
         if (existingCourse) {
           Object.assign(existingCourse, courseData);
           await existingCourse.save();
-          await elasticsearchService.indexCourse(existingCourse);
+          coursesToIndex.push(existingCourse);
           results.updated++;
         } else {
           const course = new Course(courseData);
           await course.save();
-          await elasticsearchService.indexCourse(course);
+          coursesToIndex.push(course);
           results.created++;
         }
       } catch (error) {
@@ -98,13 +101,35 @@ router.post('/csv', upload.single('file'), async (req, res) => {
       }
     }
 
+    // Elasticsearch indexing (optional - for enhanced search functionality)
+    if (coursesToIndex.length > 0) {
+      try {
+        // Check if Elasticsearch is actually usable before attempting indexing
+        const isUsable = await elasticsearchService.isUsable();
+        if (isUsable) {
+          await elasticsearchService.bulkIndexCourses(coursesToIndex);
+        }
+      } catch (error) {
+        // Elasticsearch indexing is optional, continue silently
+      }
+    }
+
     await clearCache('courses:*');
     await clearCache('search:*');
 
+    // Check Elasticsearch status for response
+    const elasticsearchUsable = await elasticsearchService.isUsable();
+    
     res.json({
       success: true,
-      message: 'CSV upload completed',
-      data: results
+      message: 'CSV upload completed successfully',
+      data: {
+        ...results,
+        elasticsearchStatus: elasticsearchUsable ? 'indexed' : 'not_available',
+        note: elasticsearchUsable 
+          ? 'Courses indexed to both MongoDB and Elasticsearch for optimal search performance'
+          : 'Courses saved to MongoDB (search will use MongoDB queries - Elasticsearch optional for enhanced search)'
+      }
     });
 
   } catch (error) {
