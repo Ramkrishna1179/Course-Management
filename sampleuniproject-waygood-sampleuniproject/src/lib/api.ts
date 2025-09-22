@@ -1,5 +1,4 @@
 // API service for handling all backend calls
-import { getUserFromToken } from './jwt';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002';
 const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_BASE_URL || 'http://localhost:3001';
@@ -32,14 +31,23 @@ class ApiService {
   }
 
   getAuthToken() {
-    return this.authToken;
+    // First try to get from instance variable
+    if (this.authToken) {
+      return this.authToken;
+    }
+    
+    // Fallback to localStorage
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        this.authToken = token;
+        return token;
+      }
+    }
+    
+    return null;
   }
 
-  getUserFromToken() {
-    const token = this.getAuthToken();
-    if (!token) return null;
-    return getUserFromToken(token);
-  }
 
   private getHeaders() {
     const headers: Record<string, string> = {
@@ -65,8 +73,8 @@ class ApiService {
 
       if (!response.ok) {
         if (response.status === 401) {
-          this.clearAuthToken();
-          if (typeof window !== 'undefined') {
+          // Only redirect to login if it's not a profile check
+          if (typeof window !== 'undefined' && !url.includes('/profile')) {
             window.location.href = '/admin/login';
           }
           throw new Error('Unauthorized');

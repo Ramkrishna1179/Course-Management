@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { apiService } from '@/lib/api';
 
 // User interface for authentication
 export interface User {
@@ -35,15 +34,28 @@ export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async (_, { rejectWithValue }) => {
     try {
-      const token = apiService.getAuthToken();
+      const token = localStorage.getItem('authToken');
+      
       if (!token) {
         throw new Error('No token found');
       }
 
-      const response = await apiService.getProfile();
-      if (response.success) {
+      const response = await fetch('http://localhost:3001/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Token validation failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
         return {
-          user: response.data,
+          user: data.data,
           token,
         };
       } else {
@@ -59,21 +71,31 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await apiService.login(credentials.email, credentials.password);
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
       
-      if (response.success) {
-        const token = response.token || response.data?.token;
+      if (data.success) {
+        const token = data.token || data.data?.token;
         if (token) {
-          apiService.setAuthToken(token);
+          // Store token in localStorage
+          localStorage.setItem('authToken', token);
+          
           return {
-            user: response.data?.user || response.data,
+            user: data.data?.user || data.data,
             token,
           };
         } else {
           throw new Error('No token received');
         }
       } else {
-        throw new Error(response.message || 'Login failed');
+        throw new Error(data.message || 'Login failed');
       }
     } catch (error: any) {
       return rejectWithValue(error.message || 'Login failed');
@@ -85,7 +107,8 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      apiService.clearAuthToken();
+      // Clear token from localStorage
+      localStorage.removeItem('authToken');
       return null;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Logout failed');
@@ -98,11 +121,13 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: (state) => {
+    logout: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.isLoading = false;
       state.error = null;
-    },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
+      localStorage.removeItem('authToken');
     },
   },
   extraReducers: (builder) => {
@@ -118,6 +143,10 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
+        // Ensure token is synced with localStorage
+        if (typeof window !== 'undefined' && action.payload.token) {
+          localStorage.setItem('authToken', action.payload.token);
+        }
       })
       .addCase(checkAuth.rejected, (state, action) => {
         state.isLoading = false;
@@ -137,6 +166,10 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
+        // Ensure token is synced with localStorage
+        if (typeof window !== 'undefined' && action.payload.token) {
+          localStorage.setItem('authToken', action.payload.token);
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -164,5 +197,5 @@ const authSlice = createSlice({
 });
 
 // Export actions and reducer
-export const { clearError, setLoading } = authSlice.actions;
+export const { logout: logoutAction } = authSlice.actions;
 export default authSlice.reducer;

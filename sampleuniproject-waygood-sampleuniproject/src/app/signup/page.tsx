@@ -9,16 +9,20 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Compass, UserPlus, LogIn } from 'lucide-react';
 import { apiService } from '@/lib/api';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { login } from '@/lib/store/slices/authSlice';
 import Link from 'next/link';
 
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const dispatch = useAppDispatch();
+  const { isLoading, error } = useAppSelector((state) => state.auth);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSignupLoading, setIsSignupLoading] = useState(false);
   const [errors, setErrors] = useState<{
     username?: string;
     email?: string;
@@ -108,20 +112,38 @@ export default function SignupPage() {
       return;
     }
 
-    setIsLoading(true);
+    setIsSignupLoading(true);
 
     try {
       const response = await apiService.signup(username, email, password);
       
       if (response.success) {
-        toast({
-          title: 'Account Created Successfully',
-          description: 'Welcome to Course Compass!',
-          duration: 3000,
-        });
+        // After successful signup, automatically log in the user
+        const loginResult = await dispatch(login({ email, password }));
         
-        // Redirect to home page for regular users
-        router.push('/');
+        if (login.fulfilled.match(loginResult)) {
+          toast({
+            title: 'Account Created Successfully',
+            description: 'Welcome to Course Compass!',
+            duration: 3000,
+          });
+          
+          // Redirect based on user role
+          const userRole = loginResult.payload.user.role;
+          if (userRole === 'admin') {
+            router.push('/admin/dashboard');
+          } else {
+            router.push('/');
+          }
+        } else {
+          // If auto-login fails, still show success but redirect to login
+          toast({
+            title: 'Account Created Successfully',
+            description: 'Please log in with your new credentials.',
+            duration: 3000,
+          });
+          router.push('/admin/login');
+        }
       } else {
         // Show specific error message
         const errorMessage = response.message || 
@@ -158,7 +180,7 @@ export default function SignupPage() {
         duration: 5000,
       });
     } finally {
-      setIsLoading(false);
+      setIsSignupLoading(false);
     }
   };
 
@@ -187,7 +209,7 @@ export default function SignupPage() {
                   if (errors.username) setErrors({...errors, username: ''});
                 }}
                 required
-                disabled={isLoading}
+                disabled={isSignupLoading || isLoading}
                 className={errors.username ? 'border-red-500 focus:border-red-500' : ''}
               />
               {errors.username && (
@@ -206,7 +228,7 @@ export default function SignupPage() {
                   if (errors.email) setErrors({...errors, email: ''});
                 }}
                 required
-                disabled={isLoading}
+                disabled={isSignupLoading || isLoading}
                 className={errors.email ? 'border-red-500 focus:border-red-500' : ''}
               />
               {errors.email && (
@@ -225,7 +247,7 @@ export default function SignupPage() {
                   if (errors.password) setErrors({...errors, password: ''});
                 }}
                 required
-                disabled={isLoading}
+                disabled={isSignupLoading || isLoading}
                 className={errors.password ? 'border-red-500 focus:border-red-500' : ''}
               />
               {errors.password && (
@@ -244,7 +266,7 @@ export default function SignupPage() {
                   if (errors.confirmPassword) setErrors({...errors, confirmPassword: ''});
                 }}
                 required
-                disabled={isLoading}
+                disabled={isSignupLoading || isLoading}
                 className={errors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''}
               />
               {errors.confirmPassword && (
@@ -253,9 +275,9 @@ export default function SignupPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-              {!isLoading && <UserPlus className="ml-2 h-4 w-4" />}
+            <Button type="submit" className="w-full" disabled={isSignupLoading || isLoading}>
+              {(isSignupLoading || isLoading) ? 'Creating Account...' : 'Create Account'}
+              {!(isSignupLoading || isLoading) && <UserPlus className="ml-2 h-4 w-4" />}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               <p>Already have an account?</p>

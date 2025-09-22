@@ -55,31 +55,20 @@ export default function AdminLoginPage() {
     }
 
     try {
-      const result = await dispatch(login({ email, password }));
+      const result = await dispatch(login({ email, password })).unwrap();
       
-      if (login.fulfilled.match(result)) {
-        toast({
-          title: 'Login Successful',
-          description: 'Welcome back!',
-          duration: 3000,
-        });
-        
-        // Redirect based on user role
-        const userRole = result.payload.user.role;
-        if (userRole === 'admin') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/');
-        }
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back!',
+        duration: 3000,
+      });
+      
+      // Redirect based on user role
+      const userRole = result.user.role;
+      if (userRole === 'admin') {
+        router.push('/admin/dashboard');
       } else {
-        // Show error message
-        const errorMessage = typeof result.payload === 'string' ? result.payload : 'Login failed. Please try again.';
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: errorMessage,
-          duration: 5000,
-        });
+        router.push('/');
       }
     } catch (error: any) {
       let errorMessage = 'An error occurred. Please try again.';

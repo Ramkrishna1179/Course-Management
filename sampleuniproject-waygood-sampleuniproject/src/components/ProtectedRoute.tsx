@@ -18,40 +18,48 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Check authentication status
-    dispatch(checkAuth());
+    const checkAuthentication = async () => {
+      const token = localStorage.getItem('authToken');
+      
+      if (token) {
+        try {
+          await dispatch(checkAuth()).unwrap();
+        } catch (error) {
+          // Token is invalid, will be handled by Redux
+        }
+      }
+      
+      setIsChecking(false);
+    };
+
+    checkAuthentication();
   }, [dispatch]);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated || !user) {
-        router.push(fallbackPath);
-        return;
-      }
-
-      const userRole = user.role;
-      
-      if (requiredRole === 'admin' && userRole !== 'admin') {
-        // User is not admin, redirect to main page
-        router.push('/');
-        return;
-      }
-      
-      if (requiredRole === 'user' && userRole === 'admin') {
-        // Admin trying to access user area, redirect to admin dashboard
-        router.push('/admin/dashboard');
-        return;
-      }
-      
-      setIsAuthorized(true);
+    if (isChecking) return;
+    
+    if (!isAuthenticated || !user) {
+      router.push(fallbackPath);
+      return;
     }
-  }, [isAuthenticated, user, isLoading, requiredRole, router, fallbackPath]);
 
-  if (isLoading) {
+    // Check role requirements
+    if (requiredRole === 'admin' && user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
+    
+    if (requiredRole === 'user' && user.role === 'admin') {
+      router.push('/admin/dashboard');
+      return;
+    }
+  }, [isAuthenticated, user, isChecking, requiredRole, router, fallbackPath]);
+
+  if (isChecking || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -62,8 +70,8 @@ export default function ProtectedRoute({
     );
   }
 
-  if (!isAuthorized) {
-    return null;
+  if (!isAuthenticated || !user) {
+    return null; // Will redirect
   }
 
   return <>{children}</>;

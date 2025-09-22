@@ -20,11 +20,15 @@ export default function Home() {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('all');
-  const [tuitionRange, setTuitionRange] = useState([0, 50000]);
+  const [selectedInstructor, setSelectedInstructor] = useState('all');
+  const [priceRange, setPriceRange] = useState([0, 50000]);
   const [courseLevel, setCourseLevel] = useState('all');
   const [backendCourses, setBackendCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [useBackend, setUseBackend] = useState(false);
+  
+  // Dynamic filter options
+  const [instructors, setInstructors] = useState<string[]>([]);
   
   // Course details modal state
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -42,7 +46,27 @@ export default function Home() {
     setShowCourseModal(false);
   };
 
-  // University options for dropdown
+  // Load dynamic filter options from backend
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const response = await apiService.getCourses({ page: 1, limit: 1000 });
+        if (response.success && response.data) {
+          const courses = response.data.courses || [];
+          
+          // Extract unique instructors for backend data
+          const uniqueInstructors = [...new Set(courses.map((course: any) => course.instructor).filter(Boolean))] as string[];
+          setInstructors(uniqueInstructors);
+        }
+      } catch (error) {
+        // Handle error silently
+      }
+    };
+    
+    loadFilterOptions();
+  }, []);
+
+  // University options for sample data
   const universityOptions = useMemo(() => {
     return universities.map((uni) => ({ value: uni.uniqueCode, label: uni.universityName }));
   }, []);
@@ -80,18 +104,23 @@ export default function Home() {
           searchParams.level = courseLevel;
         }
 
-        // Add price range filters
-        if (tuitionRange[0] > 0) {
-          searchParams.minPrice = tuitionRange[0];
+        // Add instructor filter for backend data
+        if (selectedInstructor !== 'all') {
+          searchParams.instructor = selectedInstructor;
         }
-        if (tuitionRange[1] < 50000) {
-          searchParams.maxPrice = tuitionRange[1];
+
+        // Add price range filters
+        if (priceRange[0] > 0) {
+          searchParams.minPrice = priceRange[0];
+        }
+        if (priceRange[1] < 50000) {
+          searchParams.maxPrice = priceRange[1];
         }
 
         // Use searchCourses API for server-side filtering
         // If no search parameters, first try to get all courses
         let response;
-        if (!searchTerm && courseLevel === 'all' && tuitionRange[0] === 0 && tuitionRange[1] === 50000) {
+        if (!searchTerm && courseLevel === 'all' && selectedInstructor === 'all' && priceRange[0] === 0 && priceRange[1] === 50000) {
           response = await apiService.getCourses({ limit: 100 });
         } else {
           response = await apiService.searchCourses(searchParams);
@@ -165,7 +194,7 @@ export default function Home() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [useBackend, searchTerm, courseLevel, tuitionRange]);
+  }, [useBackend, searchTerm, courseLevel, selectedInstructor, priceRange]);
 
   // Filter courses based on data source
   const filteredCourses = useMemo(() => {
@@ -180,13 +209,13 @@ export default function Home() {
           (course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             course.overviewDescription.toLowerCase().includes(searchTerm.toLowerCase())) &&
           (selectedUniversity === 'all' || course.universityCode === selectedUniversity) &&
-          (course.firstYearTuitionFee >= tuitionRange[0] && course.firstYearTuitionFee <= tuitionRange[1]) &&
+          (course.firstYearTuitionFee >= priceRange[0] && course.firstYearTuitionFee <= priceRange[1]) &&
           (courseLevel === 'all' || course.courseLevel === courseLevel)
         );
       });
       return filtered;
     }
-  }, [searchTerm, selectedUniversity, tuitionRange, courseLevel, backendCourses, useBackend]);
+  }, [searchTerm, selectedUniversity, selectedInstructor, priceRange, courseLevel, backendCourses, useBackend]);
 
   return (
     <div className="bg-background text-foreground">
@@ -236,22 +265,42 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="university" className="text-sm font-medium">University</label>
-                  <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
-                    <SelectTrigger id="university" className="w-full mt-2">
-                      <SelectValue placeholder="Select University" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Universities</SelectItem>
-                      {universityOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Show University filter for sample data, Instructor filter for backend data */}
+                {!useBackend ? (
+                  <div>
+                    <label htmlFor="university" className="text-sm font-medium">University</label>
+                    <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
+                      <SelectTrigger id="university" className="w-full mt-2">
+                        <SelectValue placeholder="Select University" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Universities</SelectItem>
+                        {universityOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div>
+                    <label htmlFor="instructor" className="text-sm font-medium">Instructor</label>
+                    <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
+                      <SelectTrigger id="instructor" className="w-full mt-2">
+                        <SelectValue placeholder="Select Instructor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Instructors</SelectItem>
+                        {instructors.map((instructor) => (
+                          <SelectItem key={instructor} value={instructor}>
+                            {instructor}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 
                 <div>
                   <label htmlFor="course-level" className="text-sm font-medium">Course Level</label>
@@ -271,19 +320,19 @@ export default function Home() {
 
                 <div>
                   <label className="text-sm font-medium">
-                    Max. 1st Year Tuition ({courses[0]?.tuitionFeeCurrency || 'USD'})
+                    Max. Course Price (USD)
                   </label>
                   <div className="flex items-center gap-4 mt-2">
                     <Slider
                       min={0}
                       max={50000}
                       step={1000}
-                      value={[tuitionRange[1]]}
-                      onValueChange={(value) => setTuitionRange([tuitionRange[0], value[0]])}
+                      value={[priceRange[1]]}
+                      onValueChange={(value) => setPriceRange([priceRange[0], value[0]])}
                     />
                   </div>
                   <div className="text-right text-sm text-muted-foreground mt-1">
-                    Up to ${tuitionRange[1].toLocaleString()}
+                    Up to ${priceRange[1].toLocaleString()}
                   </div>
                 </div>
               </div>

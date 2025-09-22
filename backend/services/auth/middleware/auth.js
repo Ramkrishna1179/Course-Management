@@ -17,7 +17,7 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.userId).select('-password');
     
     if (!user || !user.isActive) {
       return res.status(401).json({ 

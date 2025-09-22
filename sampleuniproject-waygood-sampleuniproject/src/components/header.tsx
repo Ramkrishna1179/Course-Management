@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Compass, Sparkles, UserCog, LogIn, UserPlus, LogOut, User, Shield, Search } from 'lucide-react';
+import { Compass, Sparkles, LogIn, UserPlus, LogOut, User, Shield, Search } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { checkAuth, logout } from '@/lib/store/slices/authSlice';
+import { logout, checkAuth } from '@/lib/store/slices/authSlice';
 
 // logo component
 const Logo = () => (
@@ -34,13 +34,15 @@ export default function Header() {
   const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Check authentication status on component mount
-    dispatch(checkAuth());
+    // Check authentication on component mount
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      dispatch(checkAuth());
+    }
   }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
-    window.location.href = '/';
   };
 
   return (
